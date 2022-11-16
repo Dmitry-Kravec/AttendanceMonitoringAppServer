@@ -5,5 +5,7 @@ const teacherController = require("../controllers/teacherController");
 router.get("/LessonList?:email", teacherController.getTeacherLessonList);
 router.get("/LessonInfo?:lessonId", teacherController.getLessonInfo);
 
-router.post("/qr", teacherController.getQrForLesson); //get
+router.post("/newQr", teacherController.createQrForLesson);
+router.put("/refreshQr", teacherController.refreshQrForPair);
+
 module.exports = router;

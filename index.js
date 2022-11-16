@@ -1,4 +1,4 @@
-require("dotenv").config(); // чтобы считывать всё из .env
+require("dotenv").config();
 const express = require("express");
 const sequelize = require("./db");
 const models = require("./models/models");
@@ -17,15 +17,15 @@ app.use("/api", router);
 app.use(errorHandler);
 
 const start = async () => {
-  try {
-    await sequelize.authenticate();
-    await sequelize.sync();
-    app.listen(PORT, () => {
-      console.log(`Server started on ${PORT} port`);
-    });
-  } catch (e) {
-    console.log(e);
-  }
+    try {
+        await sequelize.authenticate();
+        await sequelize.sync();
+        app.listen(PORT, () => {
+            console.log(`Server started on ${PORT} port`);
+        });
+    } catch (e) {
+        console.log(e);
+    }
 };
 
 start();
