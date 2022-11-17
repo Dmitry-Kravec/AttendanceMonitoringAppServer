@@ -1,7 +1,10 @@
 const { Sequelize } = require("sequelize");
 
 module.exports = new Sequelize(
-    "postgres://iukkszge:uh9Bw1OpLRqzk4wI-0nlwZ3jOhoU5fG7@abul.db.elephantsql.com/iukkszge"
+    "postgres://iukkszge:uh9Bw1OpLRqzk4wI-0nlwZ3jOhoU5fG7@abul.db.elephantsql.com/iukkszge",
+    {
+        dialectModule: pg,
+    }
 );
 
 // module.exports = new Sequelize(
