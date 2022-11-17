@@ -13,6 +13,8 @@ app.use(cors());
 app.use(express.json());
 app.use("/api", router);
 
+app.get("/", (req, res) => res.send("Home Page Route"));
+
 // идёт последним
 app.use(errorHandler);
 
