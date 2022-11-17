@@ -1,4 +1,5 @@
 const { Sequelize } = require("sequelize");
+const pg = require("pg");
 
 module.exports = new Sequelize(
     "postgres://iukkszge:uh9Bw1OpLRqzk4wI-0nlwZ3jOhoU5fG7@abul.db.elephantsql.com/iukkszge",
