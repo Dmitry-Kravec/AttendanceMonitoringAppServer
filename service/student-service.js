@@ -59,8 +59,6 @@ class StudentService {
             where: { qrCode: studentQrCode },
         });
 
-        console.log(pairs.length);
-
         if (pairs.length > 1) {
             throw ApiError.internal(
                 "В таблице есть несколько одинаковых qr-кодов"
@@ -71,7 +69,7 @@ class StudentService {
             throw ApiError.forbidden("В таблице нет указанного qr-кода");
         }
 
-        await models.PairVisitRecords.update(
+        const updatedRows = await models.PairVisitRecords.update(
             {
                 startTime: Date.now(),
                 status: "mark",
@@ -83,6 +81,10 @@ class StudentService {
                 },
             }
         );
+
+        if (updatedRows[0] === 0) {
+            throw ApiError.conflict("Студент не является участником занятия");
+        }
 
         const lesson = await models.Lessons.findOne({
             where: { lessonMainID: pairs[0].lessonLessonMainID },
