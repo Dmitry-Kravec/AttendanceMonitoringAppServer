@@ -1,6 +1,8 @@
 const models = require("../models/models");
 const ApiError = require("../error/apiError");
 
+const bubbleObject = require("./utils/bubbleObject");
+
 class StudentService {
     async getStudentPairHistory(email) {
         const student = await models.Students.findOne({
@@ -11,42 +13,46 @@ class StudentService {
             throw ApiError.badRequest("Пользователь не найден");
         }
 
-        let pairVisitRecordsList = await models.PairVisitRecords.findAll({
-            where: { studentStudID: student.studID },
+        let query = await models.Students.findAll({
+            where: { sfeduemail: email },
+            include: {
+                model: models.PairVisitRecords,
+                attributes: ["pairPairID", "status", "startTime"],
+                include: {
+                    model: models.Pairs,
+                    attributes: ["qrCode"],
+                    include: {
+                        model: models.Lessons,
+                        attributes: ["name", "lessonMainID"],
+                        include: {
+                            model: models.Teachers,
+                            attributes: ["firstName", "lastName"],
+                        },
+                    },
+                },
+            },
         });
 
-        pairVisitRecordsList = pairVisitRecordsList.map((el) => {
-            const {
-                dataValues: { pairPairID, startTime, status },
-            } = el;
-            return {
-                pairPairID,
-                startTime,
-                status,
-            };
-        });
+        const pairVisitRecordsList = query[0].pair_visit_records.map(
+            (element) => {
+                const bubbleObjectElement = bubbleObject(element);
 
-        for (let i = 0; i < pairVisitRecordsList.length; i++) {
-            const pair = await models.Pairs.findOne({
-                where: { pairID: pairVisitRecordsList[i].pairPairID },
-            });
+                bubbleObjectElement.lessonName = bubbleObjectElement.name;
+                bubbleObjectElement.teacherFirstName =
+                    bubbleObjectElement.firstName;
+                bubbleObjectElement.teacherLastName =
+                    bubbleObjectElement.lastName;
 
-            pairVisitRecordsList[i].lessonMainID = pair.lessonLessonMainID;
-        }
+                delete bubbleObjectElement.name;
+                delete bubbleObjectElement.firstName;
+                delete bubbleObjectElement.lastName;
+                delete bubbleObjectElement.qrCode;
 
-        for (let i = 0; i < pairVisitRecordsList.length; i++) {
-            const lesson = await models.Lessons.findOne({
-                where: { lessonMainID: pairVisitRecordsList[i].lessonMainID },
-            });
-
-            const teacher = await models.Teachers.findOne({
-                where: { teacherID: lesson.teacherTeacherID },
-            });
-
-            pairVisitRecordsList[i].lessonName = lesson.name;
-            pairVisitRecordsList[i].teacherFirstName = teacher.firstName;
-            pairVisitRecordsList[i].teacherLastName = teacher.lastName;
-        }
+                return {
+                    ...bubbleObjectElement,
+                };
+            }
+        );
 
         return pairVisitRecordsList;
     }

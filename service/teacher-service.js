@@ -1,5 +1,6 @@
 const models = require("../models/models");
 const ApiError = require("../error/apiError");
+const e = require("express");
 
 class teacherService {
     async getTeacherLessonList(email) {
@@ -13,17 +14,10 @@ class teacherService {
 
         let lessonList = await models.Lessons.findAll({
             where: { teacherTeacherID: teacher.teacherID },
+            attributes: ["lessonMainID", "name"],
         });
 
-        lessonList = lessonList.map((el) => {
-            const {
-                dataValues: { lessonMainID, name },
-            } = el;
-            return {
-                lessonMainID,
-                name,
-            };
-        });
+        lessonList = lessonList.map((el) => el.dataValues);
 
         return lessonList;
     }
@@ -46,12 +40,12 @@ class teacherService {
             throw ApiError.badRequest("lessonID не задан");
         }
 
-        const qrCode = this.generateUniqueKey();
-
         const lesson = await models.Lessons.findByPk(lessonID);
         if (!lesson) {
             throw ApiError.badRequest("Предмета не существует в базе данных");
         }
+
+        const qrCode = this.generateUniqueKey();
 
         const newPair = await models.Pairs.create({
             dateTime: Date.now(),
@@ -63,14 +57,10 @@ class teacherService {
             where: {
                 lessonLessonMainID: lessonID,
             },
+            attributes: ["studentStudID"],
         });
 
-        students = students.map((el) => {
-            const {
-                dataValues: { studentStudID },
-            } = el;
-            return studentStudID;
-        });
+        students = students.map((el) => el.dataValues.studentStudID);
 
         for (let i = 0; i < students.length; i++) {
             await models.PairVisitRecords.create({
@@ -108,45 +98,40 @@ class teacherService {
     async getLessonInfoPairList(lessonID) {
         let pairList = await models.Pairs.findAll({
             where: { lessonLessonMainID: lessonID },
+            attributes: ["pairID", "dateTime", "lessonLessonMainID"],
         });
 
-        pairList = pairList.map((el) => {
-            const {
-                dataValues: { pairID, dateTime, lessonLessonMainID },
-            } = el;
-
-            return {
-                pairID,
-                dateTime,
-                lessonLessonMainID,
-            };
-        });
+        pairList = pairList.map((el) => el.dataValues);
 
         return pairList;
     }
 
     async getLessonInfoStudentList(lessonID) {
-        let students = await models.LessonsAndStudents.findAll({
+        let query = await models.Lessons.findOne({
             where: {
-                lessonLessonMainID: lessonID,
+                lessonMainID: lessonID,
+            },
+            include: {
+                model: models.Students,
+                through: {
+                    attributes: [],
+                },
+                attributes: ["firstName", "lastName", "studID", "sfeduemail"],
             },
         });
 
-        students = students.map((el) => {
-            const {
-                dataValues: { studentStudID },
-            } = el;
-            return studentStudID;
-        });
-
-        let studentList = [];
-        for (let i = 0; i < students.length; i++) {
-            let student = await models.Students.findOne({
-                where: { studID: students[i] },
-            });
-            const { firstName, lastName, studID: ID, sfeduemail } = student;
-            studentList.push({ firstName, lastName, ID, sfeduemail });
-        }
+        const studentList = query.dataValues.students.map(
+            ({
+                dataValues: { firstName, lastName, studID: ID, sfeduemail },
+            }) => {
+                return {
+                    firstName,
+                    lastName,
+                    ID,
+                    sfeduemail,
+                };
+            }
+        );
 
         return studentList;
     }
